@@ -2,6 +2,14 @@ from pydantic import BaseModel, EmailStr, Field
 from pydantic.alias_generators import to_camel
 from typing import Optional
 import uuid
+from datetime import datetime
+
+
+class UserCurrent(BaseModel):
+    id: str
+    username: str
+    email: EmailStr
+    created_at: datetime
 
 
 class CamelCaseModel(BaseModel):
