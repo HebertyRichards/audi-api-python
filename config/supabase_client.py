@@ -12,9 +12,10 @@ supabase_service_key = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_anon_key)
 supabase_admin: Client = create_client(supabase_url, supabase_service_key)
 
-def create_authenticated_client(token: str) -> Client:
+
+async def create_authenticated_client(token: str) -> Client:
     return create_client(
         supabase_url,
         supabase_anon_key,
-        options={"global": {"headers": {"Authorization": f"Bearer {token}"}}}
+        options={"global": {"headers": {"Authorization": f"Bearer {token}"}}},
     )
