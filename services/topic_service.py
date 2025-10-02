@@ -62,36 +62,23 @@ async def get_topic_by_field(field: str, value, page: int, limit: int):
 async def create_topic(
     title: str, content: str, author_id: str, category: str, images: List[str] = None
 ):
-    print(
-        f"[DEBUG] create_topic called with title='{title}', author_id='{author_id}', category='{category}'"
-    )
-
     if not await category_exists(category):
-        print(f"[ERROR] Category '{category}' does not exist")
         raise AppException(
             "VALIDATION_ERROR", f"A categoria '{category}' não é válida."
         )
 
     try:
-        print(f"[DEBUG] Checking user permissions for category '{category}'")
         rpc_res = supabase.rpc(
             "can_create_topic", {"p_user_id": author_id, "p_category_slug": category}
         ).execute()
-        print(f"[DEBUG] RPC response: {rpc_res.data}")
 
         if not rpc_res.data:
-            print(
-                f"[ERROR] User '{author_id}' does not have permission to create topic in category '{category}'"
-            )
             raise AppException(
                 "FORBIDDEN_ERROR",
                 "Você não tem permissão para criar tópicos nesta categoria.",
             )
 
         slug = generate_slug(title)
-        print(f"[DEBUG] Generated slug: '{slug}'")
-
-        print(f"[DEBUG] Inserting topic into database")
         topic_res = (
             supabase.from_("topicos")
             .insert(
@@ -103,11 +90,14 @@ async def create_topic(
                     "slug": slug,
                 }
             )
-            .select()
-            .single()
             .execute()
         )
-        topic_data = topic_res.data
+        topic_data = topic_res.data[0] if topic_res.data else None
+
+        if not topic_data:
+            raise AppException(
+                "DATABASE_ERROR", "Falha ao criar o tópico, nenhum dado retornado."
+            )
 
         if images and topic_data:
             images_to_insert = [
@@ -117,7 +107,7 @@ async def create_topic(
             supabase.from_("imagens").insert(images_to_insert).execute()
 
         return topic_data
-    except APIError as e:
+    except (APIError, IndexError) as e:
         raise AppException("DATABASE_ERROR", f"Erro ao criar tópico: {e.message}")
 
 
@@ -182,11 +172,10 @@ async def create_comment(
         comment_res = (
             supabase.from_("comentarios")
             .insert({"content": content, "author_id": author_id, "topic_id": topic_id})
-            .select()
-            .single()
             .execute()
         )
-        comment_data = comment_res.data
+
+        comment_data = comment_res.data[0] if comment_res.data else None
 
         if images and comment_data:
             images_to_insert = [

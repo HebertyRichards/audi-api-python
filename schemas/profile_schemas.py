@@ -1,17 +1,17 @@
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 
 class ProfileBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=55)
-    webiste: Optional[str] = None
+    website: Optional[str] = None
     gender: Optional[str] = None
-    birthdate: Optional[datetime] = None
+    birthdate: Optional[date] = None
     location: Optional[str] = None
     facebook: Optional[str] = None
     instagram: Optional[str] = None
-    instagram: Optional[str] = None
+    discord: Optional[str] = None
     steam: Optional[str] = None
 
 
@@ -25,10 +25,10 @@ class ProfilePublic(ProfileBase):
     mensagens_count: int = 0
 
 
-class ProfileUpdate(ProfileBase):
-    webiste: Optional[str] = None
+class ProfileUpdate(BaseModel):
+    website: Optional[str] = None
     gender: Optional[str] = None
-    birthdate: Optional[datetime] = None
+    birthdate: Optional[date] = None
     location: Optional[str] = None
     facebook: Optional[str] = None
     instagram: Optional[str] = None

@@ -44,7 +44,6 @@ async def get_user_stats(username):
         )
         topics_count = count_res.count or 0
 
-        # 5. Cálculos
         forum_stats = await get_forum_stats()
         total_topics = forum_stats.get("totalTopics", 0)
         total_posts = forum_stats.get("totalPosts", 0)
@@ -111,7 +110,7 @@ async def get_topics_by_author(username: str):
         response = (
             supabase.from_("topicos")
             .select(
-                "title, slug, category, created_in, profiles( username, avatar_url), comentarios ( count )"
+                "title, slug, category, created_in, profiles( username, role, avatar_url), comentarios ( count )"
             )
             .eq("author_id", author_id)
             .order("created_in", desc=True)

@@ -7,7 +7,7 @@ async def category_exists(slug: str) -> bool:
     try:
         response = (
             supabase.from_("categorias")
-            .select("id")
+            .select("slug")
             .eq("slug", slug)
             .single()
             .execute()

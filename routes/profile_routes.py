@@ -4,6 +4,7 @@ from schemas.profile_schemas import (
     ProfileDataUpdate,
     ProfileUpdate,
     AvatarUpdateResponse,
+    MessageResponse,
 )
 from services import profile_service
 from helpers.dependencies import get_current_user, UserCurrent
@@ -41,14 +42,18 @@ async def get_user_profile(username: str):
 
 @profile_routes.put(
     "/update",
-    response_model=ProfileUpdate,
+    response_model=MessageResponse,
     status_code=status.HTTP_200_OK,
     summary="Atualiza o perfil do usuário logado",
 )
 async def update_profile(
-    profile_update: ProfileUpdate, current_user: UserCurrent = Depends(get_current_user)
+    profile_data: ProfileUpdate,
+    current_user: UserCurrent = Depends(get_current_user),
 ):
-    return await profile_service.update_profile(current_user.id, profile_update)
+    return await profile_service.update_profile(
+        user_id=str(current_user.id),
+        profile_data=profile_data.model_dump(exclude_unset=True),
+    )
 
 
 @profile_routes.patch(

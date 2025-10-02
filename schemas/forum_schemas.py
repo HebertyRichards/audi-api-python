@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from datetime import datetime
 
@@ -18,10 +18,12 @@ class ForumStats(BaseModel):
 class RecentPost(BaseModel):
     id: int
     title: str
+    topic_slug: str
     created_in: datetime
     category_name: str
+    category_slug: str
     author_username: str
-    author_avatar: Optional[str]
+    author_avatar: Optional[HttpUrl] = None
     role: str
     comment_count: int
 

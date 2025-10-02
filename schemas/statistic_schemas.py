@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -22,10 +22,17 @@ class TopicByAuthor(BaseModel):
 
 
 class UseStatsResponse(BaseModel):
-    total_topics: int
-    total_comments: int
-    recent_topics: List[TopicByAuthor]
-    recent_comments: List[TopicByAuthor]
+    topics_count: int = Field(..., alias="topicsCount")
+    topics_per_day: float = Field(..., alias="topicsPerDay")
+    topics_percentage: float = Field(..., alias="topicsPercentage")
+    last_topic_date: Optional[datetime] = Field(None, alias="lastTopicDate")
+    messages_count: int = Field(..., alias="messagesCount")
+    messages_per_day: float = Field(..., alias="messagesPerDay")
+    messages_percentage: float = Field(..., alias="messagesPercentage")
+    last_post_date: Optional[datetime] = Field(None, alias="lastPostDate")
+    followers_count: int = Field(..., alias="followersCount")
+    member_since: datetime = Field(..., alias="memberSince")
+    last_login: Optional[datetime] = Field(None, alias="lastLogin")
 
     class Config:
         from_attributes = True

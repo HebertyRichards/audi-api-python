@@ -3,7 +3,6 @@ from schemas.topic_schemas import (
     TopicResponse,
     TopicPaginatedResponse,
     TopicUpdate,
-    CommentCreate,
     CommentResponse,
     CommentUpdate,
 )
@@ -102,23 +101,29 @@ async def delete_topic_route(
 
 
 @topic_routes.post(
-    "/{topic_id}/comments",
+    "/topics/{topic_id}/comments",
     response_model=CommentResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Cria um novo comentário para um tópico",
 )
 async def create_comment_route(
     topic_id: int,
-    comment_data: CommentCreate,
+    content: str = Form(...),
+    images: List[UploadFile] = File([]),
     current_user: UserCurrent = Depends(get_current_user),
 ):
+    image_urls = []
+    if images:
+        for image_file in images:
+            if image_file.filename:
+                url = await upload_service.upload_file(image_file)
+                image_urls.append(url)
+
     return await topic_service.create_comment(
-        content=comment_data.content,
+        content=content,
         author_id=str(current_user.id),
         topic_id=topic_id,
-        images=(
-            [str(url) for url in comment_data.images] if comment_data.images else None
-        ),
+        images=image_urls if image_urls else None,
     )
 
 

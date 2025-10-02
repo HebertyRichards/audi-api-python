@@ -8,6 +8,7 @@ from config.supabase_client import (
 from fastapi import UploadFile
 from helpers.exceptions import AppException
 from postgrest.exceptions import APIError
+from datetime import date
 
 
 async def get_profile_by_id(id: str):
@@ -74,6 +75,13 @@ async def update_profile(user_id: str, profile_data: dict):
             "BAD_REQUEST", "Nenhum campo válido para atualização foi fornecido."
         )
 
+    if "birthdate" in fields_to_update and isinstance(
+        fields_to_update["birthdate"], date
+    ):
+        fields_to_update["birthdate"] = fields_to_update["birthdate"].isoformat()
+
+    if "birthdate" in fields_to_update and fields_to_update["birthdate"] == "":
+        fields_to_update["birthdate"] = None
     try:
         response = (
             supabase.from_("profiles")
@@ -81,6 +89,11 @@ async def update_profile(user_id: str, profile_data: dict):
             .eq("id", user_id)
             .execute()
         )
+        if not response.data:
+            raise AppException(
+                "NOT_FOUND",
+                "O perfil que você tentou atualizar não foi encontrado ou você не tem permissão.",
+            )
         return {"message": "Perfil atualizado com sucesso!"}
     except APIError as e:
         raise AppException("DATABASE_ERROR", f"Erro ao atualizar perfil: {e.message}")
