@@ -18,7 +18,7 @@ permission_routes = APIRouter(
 
 
 @permission_routes.post(
-    "/topic/check-permission",
+    "/topics/check-permission",
     response_model=PermissionResponse,
     status_code=status.HTTP_200_OK,
     summary="Verifica se o usuário logado tem permissão para criar um tópico",
@@ -28,22 +28,22 @@ async def verify_topic_creation_permission(
     current_user: UserCurrent = Depends(get_current_user),
 ):
     has_permission = await check_topic_creation_permission(
-        author_id=str(current_user.id), category=request_data.category_slug
+        author_id=str(current_user.id),
+        category_slug=request_data.category_slug,
     )
-    return {"has_permission": has_permission}
+    return {"allowed": has_permission}
 
 
-@permission_routes.post(
+@permission_routes.get(
     "/comments/{topic_id}/check-permission",
     response_model=PermissionResponse,
     status_code=status.HTTP_200_OK,
     summary="Verifica se o usuário logado tem permissão para comentar em um tópico",
 )
 async def verify_comment_creation_permission(
-    topic_id: int,
-    current_user: UserCurrent = Depends(get_current_user),
+    topic_id: int, current_user: UserCurrent = Depends(get_current_user)
 ):
     has_permission = await check_comment_creation_permission(
         author_id=str(current_user.id), topic_id=topic_id
     )
-    return {"has_permission": has_permission}
+    return {"allowed": has_permission}

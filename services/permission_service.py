@@ -7,19 +7,19 @@ async def check_topic_creation_permission(author_id: str, category_slug: str) ->
     try:
         response = supabase.rpc(
             "can_create_topic",
-            params={"user_id": author_id, "category_slug": category_slug},
+            params={"p_user_id": author_id, "p_category_slug": category_slug},
         ).execute()
 
-        return response
+        return response.data
     except APIError as e:
         raise AppException(
             type="DATABASE_ERROR",
-            message=f"Não foi possível verificar a permissão de criação de tópico: {e.message}",
+            message=f"Não foi possível verificar a permissão: {e.message}",
         )
     except Exception as e:
         raise AppException(
             type="INTERNAL_SERVER_ERROR",
-            message=f"Ocorreu um erro inesperado no servidor: {e.message}",
+            message=f"Ocorreu um erro inesperado: {str(e)}",
         )
 
 
@@ -27,17 +27,18 @@ async def check_comment_creation_permission(author_id: str, topic_id: int) -> bo
     try:
         response = supabase.rpc(
             "can_create_comment",
-            params={"user_id": author_id, "topic_id": topic_id},
+            params={"p_user_id": author_id, "p_topic_id": topic_id},
         ).execute()
 
-        return response
+        return response.data
+
     except APIError as e:
         raise AppException(
             type="DATABASE_ERROR",
-            message=f"Não foi possível verificar a permissão de criação de comentário: {e.message}",
+            message=f"Não foi possível verificar a permissão: {e.message}",
         )
     except Exception as e:
         raise AppException(
             type="INTERNAL_SERVER_ERROR",
-            message=f"Ocorreu um erro inesperado no servidor: {e.message}",
+            message=f"Ocorreu um erro inesperado: {str(e)}",
         )

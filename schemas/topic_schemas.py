@@ -29,7 +29,7 @@ class TopicBase(BaseModel):
 
 
 class TopicCreate(TopicBase):
-    category_slug: str
+    category_slug: str = Field(..., alias="category")
     images: Optional[List[HttpUrl]] = None
 
 

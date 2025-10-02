@@ -54,7 +54,7 @@ async def register_user(user_data: UserCreate):
         supabase.from_("profiles").insert(profile_data).execute()
     except Exception:
         if user_id:
-            await supabase_admin.auth.admin.delete_user(user_id)
+            supabase_admin.auth.admin.delete_user(user_id)
         raise AppException(
             type="INTERNAL_SERVER_ERROR", message="Falha ao criar o perfil do usuário."
         )
@@ -164,9 +164,7 @@ async def update_password_with_token(access_token: str, new_password: str):
             raise Exception("Token inválido")
         user_id = user_response.user.id
 
-        await supabase_admin.auth.admin.update_user_by_id(
-            user_id, {"password": new_password}
-        )
+        supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password})
 
         return {"message": "Senha atualizada com sucesso!"}
     except Exception as e:
@@ -199,9 +197,7 @@ async def update_authenticated_user_password(access_token: str, new_password: st
 
 async def delete_user_account(user_id: str, email: str, password: str):
     try:
-        await supabase.auth.sign_in_with_password(
-            {"email": email, "password": password}
-        )
+        supabase.auth.sign_in_with_password({"email": email, "password": password})
     except Exception:
         raise AppException(
             type="UNAUTHORIZED",
@@ -209,7 +205,7 @@ async def delete_user_account(user_id: str, email: str, password: str):
         )
 
     try:
-        await supabase_admin.auth.admin.delete_user(user_id)
+        supabase_admin.auth.admin.delete_user(user_id)
     except Exception:
         raise AppException(
             type="INTERNAL_SERVER_ERROR",

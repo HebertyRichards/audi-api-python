@@ -1,0 +1,94 @@
+from fastapi import APIRouter, Depends, status, UploadFile, File
+from schemas.profile_schemas import (
+    ProfilePublic,
+    ProfileDataUpdate,
+    ProfileUpdate,
+    AvatarUpdateResponse,
+)
+from services import profile_service
+from helpers.dependencies import get_current_user, UserCurrent
+
+profile_tag_metadata = {
+    "name": "Perfis de Usuário",
+    "description": "Endpoints para gerenciar perfis de usuário.",
+}
+
+profile_routes = APIRouter(prefix="/profile", tags=[profile_tag_metadata["name"]])
+
+
+@profile_routes.get(
+    "/{user_id}",
+    response_model=ProfilePublic,
+    status_code=status.HTTP_200_OK,
+    summary="Obtém o perfil de um usuário pelo ID",
+)
+async def get_profile_by_id(
+    user_id: str,
+):
+
+    return await profile_service.get_profile_by_id(user_id)
+
+
+@profile_routes.get(
+    "/user/{username}",
+    response_model=ProfilePublic,
+    status_code=status.HTTP_200_OK,
+    summary="Obtém o perfil de um usuário pelo nome de usuário",
+)
+async def get_user_profile(username: str):
+    return await profile_service.get_user_profile_by_username(username)
+
+
+@profile_routes.put(
+    "/update",
+    response_model=ProfileUpdate,
+    status_code=status.HTTP_200_OK,
+    summary="Atualiza o perfil do usuário logado",
+)
+async def update_profile(
+    profile_update: ProfileUpdate, current_user: UserCurrent = Depends(get_current_user)
+):
+    return await profile_service.update_profile(current_user.id, profile_update)
+
+
+@profile_routes.patch(
+    "/update-data",
+    response_model=ProfileDataUpdate,
+    status_code=status.HTTP_200_OK,
+    summary="Atualiza o perfil do usuário logado (nome de usuário e e-mail)",
+)
+async def update_profile_data(
+    profile_update: ProfileDataUpdate,
+    current_user: UserCurrent = Depends(get_current_user),
+):
+    return await profile_service.update_user_profile_and_auth(
+        access_token=current_user.access_token,
+        new_username=profile_update.username,
+        new_email=profile_update.email,
+    )
+
+
+@profile_routes.patch(
+    "/user/avatar",
+    response_model=AvatarUpdateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Faz upload do avatar do usuário logado",
+)
+async def upload_avatar(
+    file: UploadFile = File(...), current_user: UserCurrent = Depends(get_current_user)
+):
+    return await profile_service.update_avatar(
+        user_id=current_user.id, token=current_user.access_token, avatar_file=file
+    )
+
+
+@profile_routes.delete(
+    "/user/avatar",
+    response_model=AvatarUpdateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Remove o avatar do usuário logado",
+)
+async def delete_avatar(current_user: UserCurrent = Depends(get_current_user)):
+    return await profile_service.delete_avatar(
+        user_id=current_user.id, token=current_user.access_token
+    )

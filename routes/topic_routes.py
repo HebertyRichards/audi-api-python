@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, status, Query, Response
+from fastapi import APIRouter, Depends, status, Query, Response, Form, File, UploadFile
 from schemas.topic_schemas import (
-    TopicCreate,
     TopicResponse,
     TopicPaginatedResponse,
     TopicUpdate,
@@ -8,8 +7,9 @@ from schemas.topic_schemas import (
     CommentResponse,
     CommentUpdate,
 )
-from services import topic_service
+from services import topic_service, upload_service
 from helpers.dependencies import get_current_user, UserCurrent
+from typing import List
 
 topic_tag_metadata = {
     "name": "Tópicos e Comentários",
@@ -26,14 +26,24 @@ topic_routes = APIRouter(prefix="/posts", tags=[topic_tag_metadata["name"]])
     summary="Cria um novo tópico",
 )
 async def create_topic_route(
-    topic_data: TopicCreate, current_user: UserCurrent = Depends(get_current_user)
+    title: str = Form(...),
+    content: str = Form(...),
+    category: str = Form(...),
+    images: List[UploadFile] = File([]),
+    current_user: UserCurrent = Depends(get_current_user),
 ):
+    image_urls = []
+    if images:
+        for image_file in images:
+            if image_file.filename:
+                url = await upload_service.upload_file(image_file)
+                image_urls.append(url)
     new_topic = await topic_service.create_topic(
-        title=topic_data.title,
-        content=topic_data.content,
+        title=title,
+        content=content,
         author_id=str(current_user.id),
-        category=topic_data.category_slug,
-        images=[str(url) for url in topic_data.images] if topic_data.images else None,
+        category=category,
+        images=image_urls if image_urls else None,
     )
 
     topic_details = await topic_service.get_topic_by_field("id", new_topic["id"], 1, 0)

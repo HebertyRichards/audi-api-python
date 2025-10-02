@@ -62,22 +62,36 @@ async def get_topic_by_field(field: str, value, page: int, limit: int):
 async def create_topic(
     title: str, content: str, author_id: str, category: str, images: List[str] = None
 ):
+    print(
+        f"[DEBUG] create_topic called with title='{title}', author_id='{author_id}', category='{category}'"
+    )
+
     if not await category_exists(category):
+        print(f"[ERROR] Category '{category}' does not exist")
         raise AppException(
             "VALIDATION_ERROR", f"A categoria '{category}' não é válida."
         )
 
     try:
+        print(f"[DEBUG] Checking user permissions for category '{category}'")
         rpc_res = supabase.rpc(
             "can_create_topic", {"p_user_id": author_id, "p_category_slug": category}
         ).execute()
+        print(f"[DEBUG] RPC response: {rpc_res.data}")
+
         if not rpc_res.data:
+            print(
+                f"[ERROR] User '{author_id}' does not have permission to create topic in category '{category}'"
+            )
             raise AppException(
                 "FORBIDDEN_ERROR",
                 "Você não tem permissão para criar tópicos nesta categoria.",
             )
 
         slug = generate_slug(title)
+        print(f"[DEBUG] Generated slug: '{slug}'")
+
+        print(f"[DEBUG] Inserting topic into database")
         topic_res = (
             supabase.from_("topicos")
             .insert(
@@ -113,20 +127,25 @@ async def update_topic(topic_id: int, user_id: str, updates: dict):
             supabase.from_("topicos")
             .update({**updates, "updated_in": datetime.now(timezone.utc).isoformat()})
             .match({"id": topic_id, "author_id": user_id})
-            .select()
-            .single()
             .execute()
         )
 
         if not response.data:
             raise AppException(
                 "UPDATE_ERROR",
-                "Não foi possível atualizar o tópico. Verifique se você é o autor.",
+                "Não foi possível atualizar o tópico. Verifique se você é o autor ou se o tópico existe.",
             )
-        return response.data
+
+        return response.data[0]
+
     except APIError as e:
         raise AppException(
             "UPDATE_ERROR", f"Não foi possível atualizar o tópico: {e.message}"
+        )
+    except Exception as e:
+        raise AppException(
+            "INTERNAL_SERVER_ERROR",
+            f"Erro inesperado ao atualizar o tópico: {str(e)}",
         )
 
 
@@ -191,7 +210,7 @@ async def create_comment(
 
 async def update_comment(comment_id: int, user_id: str, content: str):
     try:
-        response = (
+        update_response = (
             supabase.from_("comentarios")
             .update(
                 {
@@ -200,20 +219,32 @@ async def update_comment(comment_id: int, user_id: str, content: str):
                 }
             )
             .match({"id": comment_id, "author_id": user_id})
+            .execute()
+        )
+
+        if not update_response.data:
+            raise AppException(
+                "UPDATE_ERROR",
+                "Não foi possível atualizar o comentário. Verifique se você é o autor ou se o comentário existe.",
+            )
+        response = (
+            supabase.from_("comentarios")
             .select("*, profiles(username, avatar_url, role), imagens(id, url)")
+            .eq("id", comment_id)
             .single()
             .execute()
         )
 
-        if not response.data:
-            raise AppException(
-                "UPDATE_ERROR",
-                "Não foi possível atualizar o comentário. Verifique se você é o autor.",
-            )
         return response.data
+
     except APIError as e:
         raise AppException(
             "UPDATE_ERROR", f"Não foi possível atualizar o comentário: {e.message}"
+        )
+    except Exception as e:
+        raise AppException(
+            "INTERNAL_SERVER_ERROR",
+            f"Erro inesperado ao atualizar o comentário: {str(e)}",
         )
 
 

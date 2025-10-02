@@ -5,6 +5,9 @@ from routes.forum_routes import forum_routes, forum_tag_metadata
 from routes.category_routes import category_routes, category_tag_metadata
 from routes.permission_routes import permission_routes, permission_tag_metadata
 from routes.topic_routes import topic_routes, topic_tag_metadata
+from routes.profile_routes import profile_routes, profile_tag_metadata
+from routes.user_routes import user_routes, user_tag_metadata
+from routes.follow_routes import follow_routes, follow_tag_metadata
 from helpers.exceptions import AppException, app_exception_handler
 import os
 from dotenv import load_dotenv
@@ -23,6 +26,9 @@ app = FastAPI(
         category_tag_metadata,
         permission_tag_metadata,
         topic_tag_metadata,
+        profile_tag_metadata,
+        user_tag_metadata,
+        follow_tag_metadata,
     ],
 )
 
@@ -32,6 +38,9 @@ app.include_router(forum_routes)
 app.include_router(category_routes)
 app.include_router(permission_routes)
 app.include_router(topic_routes)
+app.include_router(profile_routes)
+app.include_router(user_routes)
+app.include_router(follow_routes)
 
 app.add_middleware(
     CORSMiddleware,
