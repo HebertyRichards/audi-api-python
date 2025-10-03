@@ -3,22 +3,6 @@ from typing import Optional, List
 from datetime import datetime
 
 
-class LastRegistredUser(BaseModel):
-    username: str
-    role: str
-
-
-class OnlineUserProfile(BaseModel):
-    username: str
-    role: str
-    avatar_url: Optional[HttpUrl] = None
-
-
-class OnlineUser(BaseModel):
-    last_seen_at: datetime
-    profiles: OnlineUserProfile
-
-
 class AllUsersProfile(BaseModel):
     username: str
     role: str

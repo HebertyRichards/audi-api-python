@@ -1,8 +1,16 @@
 import os
 from datetime import datetime, timezone
-from config.supabase_client import supabase, supabase_admin, create_authenticated_client
+from config.supabase_client import (
+    supabase,
+    supabase_admin,
+    create_client,
+    supabase_url,
+    supabase_anon_key,
+)
+from schemas.auth_schemas import UserCurrent
 from helpers.exceptions import AppException
 from schemas.auth_schemas import UserCreate
+from supabase import AuthApiError
 
 ONE_HOUR = 60 * 60
 THIRTY_DAYS = 60 * 60 * 24 * 30
@@ -178,27 +186,39 @@ async def update_password_with_token(access_token: str, new_password: str):
         )
 
 
-async def update_authenticated_user_password(access_token: str, new_password: str):
+async def update_authenticated_user_password(
+    user: UserCurrent, new_password: str
+) -> dict:
     try:
-        supabase_auth_client = create_authenticated_client(access_token)
-        await supabase_auth_client.auth.update_user({"password": new_password})
-        return {"message": "Senha atualizada com sucesso!"}
-    except Exception as e:
-        error_message = str(e).lower()
-        if "password should be at least 6 characters" in error_message:
+        supabase_admin.auth.admin.update_user_by_id(user.id, {"password": new_password})
+
+        new_session_response = supabase.auth.sign_in_with_password(
+            {"email": user.email, "password": new_password}
+        )
+
+        if not new_session_response.session:
             raise AppException(
-                type="BAD_REQUEST",
-                message="A nova senha deve ter no mínimo 6 caracteres.",
+                type="INTERNAL_SERVER_ERROR",
+                message="Falha ao renovar a sessão após a atualização da senha.",
             )
+
+        return new_session_response.session.dict()
+
+    except Exception as e:
         raise AppException(
-            type="INTERNAL_SERVER_ERROR", message="Não foi possível atualizar a senha."
+            type="INTERNAL_SERVER_ERROR",
+            message="Ocorreu um erro interno ao tentar atualizar a senha.",
         )
 
 
 async def delete_user_account(user_id: str, email: str, password: str):
     try:
-        supabase.auth.sign_in_with_password({"email": email, "password": password})
-    except Exception:
+        password_verify_client = create_client(supabase_url, supabase_anon_key)
+
+        password_verify_client.auth.sign_in_with_password(
+            {"email": email, "password": password}
+        )
+    except AuthApiError:
         raise AppException(
             type="UNAUTHORIZED",
             message="Senha incorreta. A exclusão da conta foi cancelada.",

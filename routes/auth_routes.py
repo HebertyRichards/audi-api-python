@@ -1,6 +1,7 @@
 import os
 from fastapi import APIRouter, Request, Response, status, Depends, HTTPException
 from typing import Optional
+from fastapi.responses import JSONResponse
 from helpers.exceptions import AppException
 from services.auth_service import (
     register_user,
@@ -20,6 +21,12 @@ from schemas.auth_schemas import (
     PasswordChange,
     PasswordUpdate,
     AccountDelete,
+    UserCurrent,
+    MessageResponse,
+)
+from helpers.dependencies import (
+    get_current_user,
+    get_current_user_for_delete,
 )
 
 auth_tag_metadata = {
@@ -163,22 +170,51 @@ async def change_password(body: PasswordChange):
     status_code=status.HTTP_200_OK,
 )
 async def update_password(
-    body: PasswordUpdate, user: dict = Depends(get_required_user)
+    response: Response,
+    body: PasswordUpdate,
+    current_user: UserCurrent = Depends(get_current_user),
 ):
-    access_token = user["access_token"]
-    return await update_authenticated_user_password(access_token, body.new_password)
+    new_session_data = await update_authenticated_user_password(
+        user=current_user, new_password=body.new_password
+    )
+
+    response.set_cookie(
+        key="sb-access-token",
+        value=new_session_data["access_token"],
+        httponly=True,
+        samesite="lax",
+        secure=True,
+    )
+    response.set_cookie(
+        key="sb-refresh-token",
+        value=new_session_data["refresh_token"],
+        httponly=True,
+        samesite="lax",
+        secure=True,
+    )
+
+    return {"message": "Senha atualizada com sucesso e sessão renovada!"}
 
 
 @auth_routes.delete(
     "/delete-account",
-    summary="Deleta a conta do usuário",
+    response_model=MessageResponse,
+    summary="Deleta a conta do usuário autenticado",
     status_code=status.HTTP_200_OK,
 )
-async def delete_account(
-    response: Response, body: AccountDelete, user: dict = Depends(get_required_user)
+async def delete_account_route(
+    body: AccountDelete,
+    current_user: UserCurrent = Depends(get_current_user_for_delete),
 ):
     result = await delete_user_account(
-        user_id=str(user["id"]), email=user["email"], password=body.password
+        user_id=str(current_user.id),
+        email=current_user.email,
+        password=body.password,
     )
-    clear_auth_cookies(response)
-    return result
+
+    final_response = JSONResponse(content=result)
+
+    final_response.delete_cookie("sb-access-token")
+    final_response.delete_cookie("sb-refresh-token")
+
+    return final_response

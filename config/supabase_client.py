@@ -14,8 +14,8 @@ supabase_admin: Client = create_client(supabase_url, supabase_service_key)
 
 
 async def create_authenticated_client(token: str) -> Client:
-    return create_client(
-        supabase_url,
-        supabase_anon_key,
-        options={"global": {"headers": {"Authorization": f"Bearer {token}"}}},
-    )
+    client = create_client(supabase_url, supabase_anon_key)
+
+    client.auth.set_session(access_token=token, refresh_token="dummy_refresh_token")
+
+    return client

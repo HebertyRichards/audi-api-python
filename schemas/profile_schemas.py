@@ -38,7 +38,7 @@ class ProfileUpdate(BaseModel):
 
 class ProfileDataUpdate(BaseModel):
     username: str = Field(..., min_length=3, max_length=55)
-    new_email: EmailStr
+    new_email: EmailStr = Field(..., alias="newEmail")
 
 
 class AvatarUpdateResponse(BaseModel):

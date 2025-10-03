@@ -49,8 +49,14 @@ class PasswordChange(CamelCaseModel):
 
 
 class PasswordUpdate(CamelCaseModel):
-    new_password: str = Field(..., min_length=6)
+    new_password: str = Field(
+        min_length=6, description="A nova senha deve ter no mínimo 6 caracteres."
+    )
 
 
 class AccountDelete(CamelCaseModel):
     password: str
+
+
+class MessageResponse(BaseModel):
+    message: str

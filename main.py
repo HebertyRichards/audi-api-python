@@ -23,14 +23,14 @@ app = FastAPI(
     version="1.0.0",
     openapi_tags=[
         auth_tag_metadata,
-        forum_tag_metadata,
-        category_tag_metadata,
-        permission_tag_metadata,
-        topic_tag_metadata,
-        profile_tag_metadata,
         user_tag_metadata,
+        profile_tag_metadata,
         follow_tag_metadata,
         statistic_tag_metadata,
+        category_tag_metadata,
+        topic_tag_metadata,
+        permission_tag_metadata,
+        forum_tag_metadata,
     ],
 )
 
