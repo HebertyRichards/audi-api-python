@@ -18,6 +18,9 @@ class ForumStats(BaseModel):
 class LastRegistredUser(BaseModel):
     username: str
     role: str
+    avatar_url: Optional[HttpUrl] = None
+    location: Optional[str] = None
+    joined_at: datetime
 
 
 class OnlineUserProfile(BaseModel):

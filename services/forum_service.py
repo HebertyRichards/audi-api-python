@@ -69,7 +69,7 @@ async def get_last_registration_user():
     try:
         response = (
             supabase.from_("profiles")
-            .select("username, role")
+            .select("username, role, avatar_url, location, joined_at")
             .order("joined_at", desc=True)
             .limit(1)
             .execute()

@@ -6,8 +6,6 @@ from helpers.exceptions import AppException
 from services.auth_service import (
     register_user,
     login_user,
-    get_user_by_token,
-    refresh_user_token,
     send_recovery_email,
     update_password_with_token,
     update_authenticated_user_password,
@@ -27,6 +25,9 @@ from schemas.auth_schemas import (
 from helpers.dependencies import (
     get_current_user,
     get_current_user_for_delete,
+    set_auth_cookies,
+    clear_auth_cookies,
+    get_session,
 )
 
 auth_tag_metadata = {
@@ -34,75 +35,6 @@ auth_tag_metadata = {
     "description": "Endpoints para registro, login, logout, recuperação de senha e gerenciamento de conta.",
 }
 auth_routes = APIRouter(prefix="/auth", tags=[auth_tag_metadata["name"]])
-IS_PRODUCTION = os.environ.get("NODE_ENV") == "production"
-ONE_HOUR = 3600
-
-
-def set_auth_cookies(
-    response: Response,
-    access_token: str,
-    refresh_token: Optional[str],
-    access_expiry: int,
-    refresh_expiry: int,
-):
-    response.set_cookie(
-        key="sb-access-token",
-        value=access_token,
-        max_age=access_expiry,
-        httponly=True,
-        secure=IS_PRODUCTION,
-        samesite="none" if IS_PRODUCTION else "lax",
-    )
-    if refresh_token:
-        response.set_cookie(
-            key="sb-refresh-token",
-            value=refresh_token,
-            max_age=refresh_expiry,
-            httponly=True,
-            secure=IS_PRODUCTION,
-            samesite="none" if IS_PRODUCTION else "lax",
-        )
-    else:
-        response.delete_cookie("sb-refresh-token")
-
-
-def clear_auth_cookies(response: Response):
-    response.delete_cookie("sb-access-token")
-    response.delete_cookie("sb-refresh-token")
-
-
-async def get_session(request: Request, response: Response):
-    access_token = request.cookies.get("sb-access-token")
-    refresh_token = request.cookies.get("sb-refresh-token")
-
-    if access_token:
-        try:
-            return await get_user_by_token(access_token)
-        except AppException:
-            pass
-
-    if refresh_token:
-        try:
-            refreshed_data = await refresh_user_token(refresh_token)
-            new_access_token = refreshed_data["new_access_token"]
-            refreshed_user = await get_user_by_token(new_access_token)
-
-            set_auth_cookies(response, new_access_token, None, ONE_HOUR, 0)
-            return refreshed_user
-        except AppException:
-            clear_auth_cookies(response)
-            return None
-    return None
-
-
-async def get_required_user(request: Request, response: Response) -> dict:
-    user = await get_session(request, response)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Não autenticado ou sessão inválida.",
-        )
-    return user
 
 
 @auth_routes.post(

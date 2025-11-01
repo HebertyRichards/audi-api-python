@@ -36,7 +36,7 @@ class UserSession(CamelCaseModel):
     email: EmailStr
     username: str
     avatar_url: Optional[str] = None
-    role: Optional[str] = None
+    role: str
 
 
 class PasswordRecovery(CamelCaseModel):

@@ -9,6 +9,7 @@ from routes.profile_routes import profile_routes, profile_tag_metadata
 from routes.user_routes import user_routes, user_tag_metadata
 from routes.follow_routes import follow_routes, follow_tag_metadata
 from routes.statistic_routes import statistic_router, statistic_tag_metadata
+from routes.admin_routes import admin_routes, admin_tag_metadata
 from helpers.exceptions import AppException, app_exception_handler
 import os
 from dotenv import load_dotenv
@@ -31,6 +32,7 @@ app = FastAPI(
         topic_tag_metadata,
         permission_tag_metadata,
         forum_tag_metadata,
+        admin_tag_metadata,
     ],
 )
 
@@ -44,6 +46,7 @@ app.include_router(profile_routes)
 app.include_router(user_routes)
 app.include_router(follow_routes)
 app.include_router(statistic_router)
+app.include_router(admin_routes)
 
 app.add_middleware(
     CORSMiddleware,

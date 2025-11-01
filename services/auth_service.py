@@ -82,6 +82,21 @@ async def login_user(email: str, password: str, keep_logged: bool):
                 message="Não foi possível criar uma sessão.",
             )
 
+        user_id = session.user.id
+
+        profile_response = (
+            supabase.from_("profiles")
+            .select("role")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+
+        if not profile_response.data:
+            raise AppException("NOT_FOUND", "Perfil de usuário não encontrado.")
+
+        user_role = profile_response.data.get("role")
+
         supabase.from_("profiles").update(
             {"last_login": datetime.now(timezone.utc).isoformat()}
         ).eq("id", session.user.id).execute()
@@ -91,6 +106,7 @@ async def login_user(email: str, password: str, keep_logged: bool):
             "refresh_token": session.session.refresh_token if keep_logged else None,
             "access_token_expiry": ONE_HOUR,
             "refresh_token_expiry": THIRTY_DAYS if keep_logged else ONE_HOUR,
+            "role": user_role,
         }
     except Exception as e:
         error_message = str(e).lower()
@@ -109,7 +125,7 @@ async def get_user_by_token(token: str):
             raise Exception("Usuário não encontrado")
         profile_response = (
             supabase.from_("profiles")
-            .select("username")
+            .select("username, role, avatar_url")
             .eq("id", user.id)
             .single()
             .execute()
@@ -120,7 +136,12 @@ async def get_user_by_token(token: str):
                 message="Não foi possível carregar os dados do perfil associado.",
             )
 
-        return {**user.dict(), "username": profile_response.data["username"]}
+        return {
+            **user.dict(),
+            "username": profile_response.data["username"],
+            "role": profile_response.data["role"],
+            "avatar_url": profile_response.data["avatar_url"],
+        }
     except Exception:
         raise AppException(
             type="UNAUTHORIZED", message="Token de acesso inválido ou expirado."
