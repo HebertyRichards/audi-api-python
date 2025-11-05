@@ -26,7 +26,7 @@ async def get_all_categories():
     try:
         response = (
             supabase.from_("categorias")
-            .select("slug, name")
+            .select("slug, name, description")
             .order("name", desc=False)
             .execute()
         )
@@ -88,4 +88,90 @@ async def get_topics_by_category(category_slug: str, page: int, limit: int = 10)
         raise AppException(
             "DATABASE_ERROR",
             f"Erro inesperado ao buscar tópicos da categoria. {e.message}",
+        )
+
+
+async def create_category(slug: str, name: str, role: str, description: str) -> dict:
+    try:
+        payload = {
+            "p_slug": slug,
+            "p_name": name,
+            "p_role": role,
+            "p_description": description,
+        }
+        response = supabase.rpc("create_full_category", payload).execute()
+
+        if not response.data:
+            raise AppException(
+                type="DATABASE_ERROR",
+                message="Falha ao criar a categoria, a operação não retornou dados.",
+            )
+
+        return response.data[0]
+
+    except APIError as e:
+        raise AppException(
+            type="DATABASE_ERROR",
+            message=f"Não foi possível criar a categoria: {e.message}",
+        ) from e
+    except Exception as e:
+        if isinstance(e, AppException):
+            raise
+        raise AppException(
+            type="INTERNAL_SERVER_ERROR",
+            message=f"Erro inesperado ao criar categoria: {str(e)}",
+        )
+
+
+async def get_category_permission(category_slug: str):
+    try:
+        response = (
+            supabase.from_("categorias")
+            .select(
+                "slug, role, category_topic_permissions(user_role), category_comment_permissions(user_role)"
+            )
+            .eq("slug", category_slug)
+            .single()
+            .execute()
+        )
+        if not response.data:
+            raise AppException(
+                type="NOT_FOUND",
+                message="Categoria não encontrada ao buscar permissões.",
+            )
+
+        return response.data
+
+    except APIError as e:
+        raise AppException(
+            type="DATABASE_ERROR",
+            message=f"Não foi possível buscar a categoria: {e.message}",
+        )
+    except Exception as e:
+        raise AppException(
+            type="INTERNAL_SERVER_ERROR",
+            message=f"Erro inesperado ao buscar categoria: {str(e)}",
+        )
+
+
+async def delete_category(slug: str):
+    try:
+        response = supabase.from_("categorias").delete().eq("slug", slug).execute()
+
+        if not response.data:
+            raise AppException(
+                type="NOT_FOUND", message="Categoria não encontrada ou já deletada."
+            )
+
+        return {"message": f"Categoria '{slug}' e todo o seu conteúdo foram deletados."}
+
+    except APIError as e:
+        raise AppException(
+            type="DATABASE_ERROR",
+            message=f"Não foi possível deletar a categoria: {e.message}",
+        )
+    except Exception as e:
+        raise AppException(
+            type="INTERNAL_SERVER_ERROR",
+            message=f"Erro inesperado: {str(e)}",
         )

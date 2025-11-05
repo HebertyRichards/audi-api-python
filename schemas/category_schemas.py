@@ -6,6 +6,7 @@ from datetime import datetime
 class Category(BaseModel):
     slug: str
     name: str
+    description: Optional[str] = None
 
 
 class Author(BaseModel):
@@ -32,3 +33,10 @@ class paginatedTopics(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CategoryCreate(BaseModel):
+    slug: str
+    name: str
+    role: str
+    description: Optional[str] = None
