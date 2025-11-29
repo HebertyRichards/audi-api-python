@@ -38,5 +38,15 @@ class paginatedTopics(BaseModel):
 class CategoryCreate(BaseModel):
     slug: str
     name: str
-    role: str
+    topicRoles: List[str]
+    commentRoles: List[str]
+    description: Optional[str] = None
+
+
+class UpdateCategory(BaseModel):
+    old_slug: str
+    new_slug: str
+    name: str
+    topicRoles: List[str]
+    commentRoles: List[str]
     description: Optional[str] = None
