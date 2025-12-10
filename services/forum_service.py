@@ -21,9 +21,9 @@ async def get_forum_stats():
         )
         newest_member_res = (
             supabase.from_("profiles")
-            .select("username, role")
+            .select("username, role, joined_at, avatar_url")
             .order("joined_at", desc=True)
-            .limit(1)
+            .limit(1)   
             .single()
             .execute()
         )

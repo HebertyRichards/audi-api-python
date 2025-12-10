@@ -6,6 +6,8 @@ from datetime import datetime
 class NewestMember(BaseModel):
     username: str
     role: str
+    joined_at: datetime
+    avatar_url: Optional[HttpUrl] = None
 
 
 class ForumStats(BaseModel):
