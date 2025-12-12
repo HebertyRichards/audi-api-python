@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Request, Response
+from fastapi import Depends, HTTPException, status, Request, Response, WebSocket, Query
 import os
 from fastapi.security import OAuth2PasswordBearer
 from schemas.auth_schemas import UserCurrent
@@ -8,6 +8,27 @@ from helpers.exceptions import AppException
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+
+
+async def get_current_user_ws(
+    websocket: WebSocket, token_query: Optional[str] = Query(None, alias="token")
+) -> UserCurrent:
+    access_token = token_query
+
+    if not access_token:
+        access_token = websocket.cookies.get("sb-access-token")
+
+    if not access_token:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        raise HTTPException(status_code=403, detail="Token não fornecido")
+
+    try:
+        user_data = await get_user_by_token(access_token)
+        return UserCurrent(**user_data)
+
+    except AppException:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        raise HTTPException(status_code=403, detail="Token inválido")
 
 
 async def get_current_token(

@@ -23,7 +23,7 @@ async def get_forum_stats():
             supabase.from_("profiles")
             .select("username, role, joined_at, avatar_url")
             .order("joined_at", desc=True)
-            .limit(1)   
+            .limit(1)
             .single()
             .execute()
         )
@@ -86,6 +86,27 @@ async def get_last_registration_user():
             "INTERNAL_SERVER_ERROR",
             f"Erro inesperado ao buscar o último usuário: {str(e)}",
         )
+
+
+async def upsert_online_user(user_id: str):
+    payload = {
+        "user_id": user_id,
+        "last_seen_at": datetime.now(timezone.utc).isoformat(),
+    }
+    supabase.from_("online_users").upsert(payload).execute()
+
+
+async def remove_online_user(user_id: str):
+    supabase.from_("online_users").delete().eq("user_id", user_id).execute()
+
+
+async def get_online_users_list():
+    response = (
+        supabase.from_("online_users")
+        .select("last_seen_at, profiles(username, role, avatar_url)")
+        .execute()
+    )
+    return response.data or []
 
 
 async def get_online_users():
