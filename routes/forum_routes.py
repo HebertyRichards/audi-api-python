@@ -8,10 +8,7 @@ from schemas.forum_schemas import (
     DashboardData,
     OnlineUser,
 )
-from helpers.dependencies import (
-    UserCurrent,
-    get_optional_current_user_ws,
-)
+from helpers.dependencies import UserCurrent, get_optional_current_user_ws
 from helpers.socket_manager import manager
 
 forum_tag_metadata = {
