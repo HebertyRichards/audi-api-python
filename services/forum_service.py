@@ -104,6 +104,10 @@ async def get_online_users_list():
     response = (
         supabase.from_("online_users")
         .select("last_seen_at, profiles(username, role, avatar_url)")
+        .gt(
+            "last_seen_at",
+            (datetime.now(timezone.utc) - timedelta(minutes=2)).isoformat(),
+        )
         .execute()
     )
     return response.data or []

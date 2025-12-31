@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, WebSocket, WebSocketDisconnect, Depends
-from typing import List
+from typing import List, Optional
 from services import forum_service
 from schemas.forum_schemas import (
     ForumStats,
@@ -8,7 +8,10 @@ from schemas.forum_schemas import (
     DashboardData,
     OnlineUser,
 )
-from helpers.dependencies import get_current_user_ws, UserCurrent
+from helpers.dependencies import (
+    UserCurrent,
+    get_optional_current_user_ws,
+)
 from helpers.socket_manager import manager
 
 forum_tag_metadata = {
@@ -21,26 +24,30 @@ forum_routes = APIRouter(prefix="/forum", tags=[forum_tag_metadata["name"]])
 
 @forum_routes.websocket("/ws/online")
 async def websocket_online_users(
-    websocket: WebSocket, current_user: UserCurrent = Depends(get_current_user_ws)
+    websocket: WebSocket,
+    current_user: Optional[UserCurrent] = Depends(get_optional_current_user_ws),
 ):
-    user_id = str(current_user.id)
-
     await manager.connect(websocket)
+    user_id = str(current_user.id) if current_user else None
 
     try:
-        await forum_service.upsert_online_user(user_id)
+        if user_id:
+            await forum_service.upsert_online_user(user_id)
+
         await manager.broadcast_user_list()
         while True:
             data = await websocket.receive_text()
             if data == "ping":
-                await forum_service.upsert_online_user(user_id)
+                if user_id:
+                    await forum_service.upsert_online_user(user_id)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-        await forum_service.remove_online_user(user_id)
+        if user_id:
+            await forum_service.remove_online_user(user_id)
 
-        await manager.broadcast_user_list()
+            await manager.broadcast_user_list()
 
 
 @forum_routes.get(

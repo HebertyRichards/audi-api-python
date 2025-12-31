@@ -158,3 +158,20 @@ async def get_required_admin_user(request: Request, response: Response) -> dict:
         )
 
     return user
+
+async def get_optional_current_user_ws(
+    websocket: WebSocket, token_query: Optional[str] = Query(None, alias="token")
+) -> Optional[UserCurrent]:
+    access_token = token_query
+
+    if not access_token:
+        access_token = websocket.cookies.get("sb-access-token")
+
+    if not access_token:
+        return None
+
+    try:
+        user_data = await get_user_by_token(access_token)
+        return UserCurrent(**user_data)
+    except AppException:
+        return None
