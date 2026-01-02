@@ -26,6 +26,16 @@ async def upsert_online_user(user_id: str) -> None:
         )
 
 
+async def remove_online_user(user_id: str) -> None:
+    try:
+        supabase.from_("online_users").delete().eq("user_id", user_id).execute()
+    except Exception as e:
+        raise AppException(
+            "INTERNAL_SERVER_ERROR",
+            f"Erro inesperado ao remover o usuário online: {str(e)}",
+        )
+
+
 async def get_all_profiles(page: int, limit: int):
     try:
         from_range = (page - 1) * limit
