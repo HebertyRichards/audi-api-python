@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from pydantic.alias_generators import to_camel
 from typing import Optional
-import uuid
 from datetime import datetime
 
 
@@ -32,11 +31,11 @@ class UserLogin(CamelCaseModel):
 
 
 class UserSession(CamelCaseModel):
-    id: uuid.UUID
     email: EmailStr
     username: str
     avatar_url: Optional[str] = None
     role: str
+    access_token: Optional[str] = None
 
 
 class PasswordRecovery(CamelCaseModel):
