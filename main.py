@@ -21,7 +21,7 @@ cliente_app = os.getenv("FRONTEND_URL", "").split(",")
 app = FastAPI(
     title="Auditore Fórum API",
     description="Documentação da API para o projeto de fórum.",
-    version="1.0.0",
+    version="2.0.0",
     openapi_tags=[
         auth_tag_metadata,
         user_tag_metadata,

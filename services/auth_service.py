@@ -141,6 +141,7 @@ async def get_user_by_token(token: str):
             "username": profile_response.data["username"],
             "role": profile_response.data["role"],
             "avatar_url": profile_response.data["avatar_url"],
+            "access_token": token
         }
     except Exception:
         raise AppException(
